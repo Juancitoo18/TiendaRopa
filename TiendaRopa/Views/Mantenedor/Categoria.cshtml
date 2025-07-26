@@ -1,0 +1,257 @@
+﻿
+@{
+    ViewBag.Title = "Categoria";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item"><a href="index.html">Matenimiento</a></li>
+    <li class="breadcrumb-item active">Categoria</li>
+</ol>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user me-1"></i> Lista de Categorias
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <button type="button" class="btn btn-success" onclick="abrirModal()">Crear Nueva Categoria</button>
+            </div>
+        </div>
+
+        <hr />
+
+        <table id="tabla" class="display cell-border" style="width: 100%">
+            <thead>
+                <tr>
+                    <th>Id Categoria</th>
+                    <th>Nombres</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="exampleModalLabel">Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-1">
+
+                    <input id="txtid" type="text" value="0" />
+
+                    <div class="col-sm-6">
+                        <label for="txtNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="txtNombre">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="cboestado" class="form-label">Estado</label>
+                        <select id="cboestado" class="form-select">
+                            <option value="0" selected>Seleccione</option>
+                            <option value="1">si</option>
+                            <option value="2">no</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Mensaje de Alerta -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div id="mensajeError" class="alert alert-danger" role="alert">
+                            A simple danger alert—check it out!
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+
+    <script>
+
+        var tabledata;
+        var filaseleccionada;
+
+        tabledata = $("#tabla").DataTable({
+
+            Responsive: true,
+            ordering: false,
+            "ajax": {
+                url: '@Url.Action("ListarCategoria", "Mantenedor")',
+                type: "GET",
+                dataType: "json"
+            },
+            "columns": [
+                {"data":"Id"},
+                { "data":"Nombre"},
+                {
+                    "data": "Estado", "render": function (valor) {
+                        if (valor) {
+                            return '<span class="badge bg-success">Activo</span>';
+                        } else {
+                            return '<span class="badge bg-danger">Desactivado</span>';
+                        }
+                    }
+                },
+                {
+                    "defaultContent": '<button type="button" class="btn btn-primary btn-sm btnEditar"> <i class="fas fa-pen"></i> </button>' +
+                        '<button type="button" class="btn btn-danger btn-sm ms-2 btnEliminar"> <i class="fas fa-trash"></i> </button>',
+                    "ordenable": false,
+                    "searchable": false,
+                    "width": "90px"
+                }
+            ],
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/2.3.2/i18n/es-ES.json"
+            }
+        });
+
+        function abrirModal(json) {
+
+            $("#txtid").val(0)
+            $("#txtNombre").val("")
+            $("#cboestado").val(0)
+            $("#mensajeError").hide();
+
+            if (json != null) {
+
+                $("#txtid").val(json.Id)
+                $("#txtNombre").val(json.Nombre)
+                $("#cboestado").val(json.Estado == true ? 1 : 2)
+            }
+
+            $("#FormModal").modal("show")
+        }
+
+
+        $("#tabla tbody").on("click", '.btnEditar', function () {
+            filaseleccionada = $(this).closest("tr");
+
+            var data = tabledata.row(filaseleccionada).data();
+
+            abrirModal(data)
+        })
+
+        $("#tabla tbody").on("click", '.btnEliminar', function () {
+            var CategoriaSeleccionado = $(this).closest("tr");
+
+            var data = tabledata.row(CategoriaSeleccionado).data();
+            debugger;
+            swal({
+                title: "¿Está seguro?",
+                text: "¿Desea Eliminar la Categoria?",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonClass: "btn-primary",
+                confirmButtonText: "¡Sí, elimínar!",
+                closeOnConfirm: true
+            },
+                function () {
+                    jQuery.ajax({
+                        url: '@Url.Action("EliminarCategoria", "Mantenedor")',
+                        type: "POST",
+                        data: JSON.stringify({ id: data.Id }),
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+
+                            if (data.resultado) {
+
+                                tabledata.row(CategoriaSeleccionado).remove().draw();
+
+                            } else {
+                                swal("No se Pudo Eliminar", data.Mensaje, "Error");
+                            }
+
+                        },
+                        error: function (error) {
+                            console.log(error)
+                        },
+                    });
+                });
+            console.log(data);
+
+        })
+
+
+        function Guardar() {
+
+            var Categoria = {
+               Id: $("#txtid").val(),
+               Nombre: $("#txtNombre").val(),
+               Estado: $("#cboestado").val() == 1 ? true : false
+            }
+
+            jQuery.ajax({
+                url: '@Url.Action("GuardarCategoria", "Mantenedor")',
+                type: "POST",
+                data: JSON.stringify({ Cate: Categoria}),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (dato) {
+
+                    //Categoria Nuevo
+                    if (Categoria.Id == 0) {
+
+                        if (dato.resultado != 0) {
+                            Categoria.Id = dato.resultado;
+                            tabledata.row.add(Categoria).draw(false);
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeError").text(dato.Mensaje);
+                            $("#mensajeError").show();
+                        }
+
+                    }
+                    //Categoria Editar
+                    else {
+                        if (dato.resultado) {
+
+                            tabledata.row(filaseleccionada).data(Categoria).draw(false);
+                            filaseleccionada = null;
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeError").text(dato.Mensaje);
+                            $("#mensajeError").show();
+                        }
+
+
+                    }
+                },
+                error: function (error) {
+                    console.log(error)
+                },
+                beforeSend: function () {
+
+                },
+            });
+
+
+
+        }
+    </script>
+
+}
+
+
+
+

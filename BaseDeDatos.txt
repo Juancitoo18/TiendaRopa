@@ -1,0 +1,270 @@
+-- Crear base de datos
+CREATE DATABASE bdsistemaventas;
+GO
+USE bdsistemaventas;
+GO
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+    id_usuario INT IDENTITY(1,1) PRIMARY KEY,
+    nombre_usuario VARCHAR(100) NOT NULL UNIQUE,
+    email_usuario VARCHAR(100) NOT NULL UNIQUE,
+    contraseña_usuario VARCHAR(100) NOT NULL,
+	restablecer_usuario VARCHAR(100) NOT NULL,
+    rol_usuario VARCHAR(20) NOT NULL DEFAULT 'cliente',
+    Estado BIT
+);
+GO
+
+-- Tabla de provincias
+CREATE TABLE provincias (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    provincia VARCHAR(255) NOT NULL,
+    Estado BIT
+);
+GO
+
+-- Tabla de localidades
+CREATE TABLE localidades (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    id_provincia INT NOT NULL,
+    localidad VARCHAR(255) NOT NULL,
+    Estado BIT,
+    FOREIGN KEY (id_provincia) REFERENCES provincias(id)
+);
+GO
+
+-- Tabla de clientes
+CREATE TABLE clientes (
+    id_cliente INT IDENTITY(1,1) PRIMARY KEY,
+    nombre_cliente VARCHAR(100),
+    dni_cliente VARCHAR(45),
+    apellido_cliente VARCHAR(45),
+    sexo_cliente VARCHAR(45),
+    fechaNacimiento_cliente DATE,
+    telefono_cliente VARCHAR(20),
+    direccion_cliente TEXT,
+    id_usuario_cliente INT UNIQUE NULL,
+    id_provincia_cliente INT NULL,
+    id_localidad_cliente INT NULL,
+    Estado BIT,
+    FOREIGN KEY (id_usuario_cliente) REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (id_provincia_cliente) REFERENCES provincias(id) ON DELETE SET NULL,
+    FOREIGN KEY (id_localidad_cliente) REFERENCES localidades(id) ON DELETE SET NULL
+);
+GO
+
+-- Tabla de categorías
+CREATE TABLE categorias (
+    id_categoria INT IDENTITY(1,1) PRIMARY KEY,
+    nombre_categoria VARCHAR(500) NOT NULL UNIQUE,
+    Estado BIT
+);
+GO
+
+-- Tabla de productos
+CREATE TABLE productos (
+    id_producto INT IDENTITY(1,1) PRIMARY KEY,
+    nombre_producto VARCHAR(100) NOT NULL,
+    descripcion_producto TEXT,
+    precio_producto DECIMAL(10,2) NOT NULL,
+    stock_producto INT NOT NULL,
+    id_categoria_producto INT,
+    id_temporada_producto INT,
+    imagen_producto VARCHAR(255) NULL,
+    Estado BIT,
+    FOREIGN KEY (id_categoria_producto) REFERENCES categorias(id_categoria),
+);
+GO
+
+-- Tabla de ventas
+CREATE TABLE ventas (
+    id_venta INT IDENTITY(1,1) PRIMARY KEY,
+    id_cliente_vt INT,
+    fecha_vt DATETIME DEFAULT GETDATE(),
+    metodo_envio INT,
+    total_vt DECIMAL(10,2) NOT NULL,
+    Estado BIT,
+    FOREIGN KEY (id_cliente_vt) REFERENCES clientes(id_cliente)
+);
+GO
+
+-- Tabla de detalle_ventas
+CREATE TABLE detalle_ventas (
+    id_detalle INT IDENTITY(1,1) PRIMARY KEY,
+    id_venta_dt INT,
+    id_producto_dt INT,
+    cantidad_dt INT NOT NULL,
+    precio_unitario_dt DECIMAL(10,2) NOT NULL,
+    subtotal_dt DECIMAL(10,2) NOT NULL,
+    Estado BIT,
+    FOREIGN KEY (id_venta_dt) REFERENCES ventas(id_venta),
+    FOREIGN KEY (id_producto_dt) REFERENCES productos(id_producto)
+);
+GO
+
+-- Tabla de pagos
+CREATE TABLE pagos (
+    id_pago INT IDENTITY(1,1) PRIMARY KEY,
+    id_venta INT,
+    metodo_pago INT NOT NULL,  -- 1=Tarjeta Crédito, 2=Débito, etc.
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    fecha_pago DATETIME DEFAULT GETDATE(),
+    total_pagado DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_venta) REFERENCES ventas(id_venta)
+);
+GO
+
+-- Insertar provincias
+INSERT INTO provincias (provincia, Estado) VALUES
+('Buenos Aires', 1),
+('Buenos Aires-GBA', 1),
+('Capital Federal', 1),
+('Catamarca', 1),
+('Chaco', 1),
+('Chubut', 1),
+('Córdoba', 1),
+('Corrientes', 1),
+('Entre Ríos', 1);
+GO
+
+
+create proc sp_AgregarUsuario(
+@Nombre VARCHAR(100),
+@Correo VARCHAR(100),
+@Clave VARCHAR(100),
+@Restablecer VARCHAR(100),
+@Rol VARCHAR(20),
+@Estado BIT,
+@Mensaje VARCHAR(500) output,
+@Resultado int output
+)
+as
+begin
+	SET @Resultado = 0
+	SET @Mensaje = ''  -- <==== ¡IMPORTANTE!
+	If NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo)
+	begin
+		insert into usuarios(nombre_usuario,email_usuario,contraseña_usuario,restablecer_usuario,rol_usuario,Estado) values
+		(@Nombre,@Correo,@Clave,@Restablecer,@Rol,@Estado)
+
+		SET @Resultado = SCOPE_IDENTITY()
+		 SET @Mensaje = 'Usuario registrado correctamente'  -- <==== ¡IMPORTANTE!
+	end
+	else
+	 set @Mensaje = 'El correo del usuario ya existe'
+end
+
+GO
+
+CREATE PROC sp_EditarUsuario(
+    @ID INT,
+    @Nombre VARCHAR(100),
+    @Correo VARCHAR(100),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+)
+AS
+BEGIN
+    SET @Resultado = 0
+    IF NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo AND id_usuario != @ID)
+    BEGIN
+        UPDATE usuarios SET
+            nombre_usuario = @Nombre,
+            email_usuario = @Correo,
+            Estado = @Estado
+        WHERE id_usuario = @ID
+
+        SET @Resultado = 1
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'El correo del usuario ya existe'
+    END
+END
+
+
+CREATE PROCEDURE sp_AgregarCategoria
+    @Nombre VARCHAR(500),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+    IF NOT EXISTS (SELECT * FROM categorias WHERE nombre_categoria = @Nombre)
+    BEGIN
+        INSERT INTO categorias (nombre_categoria, Estado)
+        VALUES (@Nombre, @Estado)
+        
+        SET @Resultado = SCOPE_IDENTITY()
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'La categoría ya existe'
+    END
+END
+GO
+
+CREATE PROCEDURE sp_EditarCategoria
+    @ID INT,
+    @Nombre VARCHAR(500),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+    IF NOT EXISTS (
+        SELECT * FROM categorias 
+        WHERE nombre_categoria = @Nombre AND id_categoria != @ID
+    )
+    BEGIN
+        UPDATE categorias
+        SET nombre_categoria = @Nombre,
+            Estado = @Estado
+        WHERE id_categoria = @ID
+
+        SET @Resultado = 1
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'El nombre de la categoría ya existe'
+    END
+END
+GO
+
+CREATE PROCEDURE sp_EliminarCategoria
+    @IDCategoria INT,
+    @Resultado INT OUTPUT,
+    @Mensaje VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @Resultado = 0;
+    SET @Mensaje = '';
+
+    -- Validar si existe la categoría
+    IF EXISTS (SELECT 1 FROM categorias WHERE id_categoria = @IDCategoria)
+    BEGIN
+        -- Validar si la categoría tiene productos
+        IF NOT EXISTS (SELECT 1 FROM productos WHERE id_categoria_producto = @IDCategoria)
+        BEGIN
+            DELETE FROM categorias WHERE id_categoria = @IDCategoria;
+            SET @Resultado = 1;
+        END
+        ELSE
+        BEGIN
+            SET @Mensaje = 'No se puede eliminar la categoría porque tiene productos asociados.';
+        END
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'La categoría no existe.';
+    END
+END
+GO
