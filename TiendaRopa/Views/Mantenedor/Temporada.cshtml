@@ -1,23 +1,22 @@
 ﻿
 @{
-    ViewBag.Title = "Categoria";
+    ViewBag.Title = "Temporada";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-
 <ol class="breadcrumb mb-4 mt-4">
     <li class="breadcrumb-item"><a href="index.html">Matenimiento</a></li>
-    <li class="breadcrumb-item active">Categoria</li>
+    <li class="breadcrumb-item active">Temporada</li>
 </ol>
 
 <div class="card">
     <div class="card-header">
-        <i class="fas fa-user me-1"></i> Lista de Categorias
+        <i class="fas fa-user me-1"></i> Lista de Temporadas
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-12">
-                <button type="button" class="btn btn-success" onclick="abrirModal()">Crear Nueva Categoria</button>
+                <button type="button" class="btn btn-success" onclick="abrirModal()">Crear Nueva Temporada</button>
             </div>
         </div>
 
@@ -26,7 +25,7 @@
         <table id="tabla" class="display cell-border" style="width: 100%">
             <thead>
                 <tr>
-                    <th>Id Categoria</th>
+                    <th>Id Temporada</th>
                     <th>Nombres</th>
                     <th>Estado</th>
                     <th></th>
@@ -96,12 +95,12 @@
             Responsive: true,
             ordering: false,
             "ajax": {
-                url: '@Url.Action("ListarCategoria", "Mantenedor")',
+                url: '@Url.Action("ListarTemporada", "Mantenedor")',
                 type: "GET",
                 dataType: "json"
             },
             "columns": [
-                {"data":"Id"},
+                { "data":"Id_Temporada"},
                 { "data":"Nombre"},
                 {
                     "data": "Estado", "render": function (valor) {
@@ -134,7 +133,7 @@
 
             if (json != null) {
 
-                $("#txtid").val(json.Id)
+                $("#txtid").val(json.Id_Temporada)
                 $("#txtNombre").val(json.Nombre)
                 $("#cboestado").val(json.Estado == true ? 1 : 2)
             }
@@ -152,13 +151,13 @@
         })
 
         $("#tabla tbody").on("click", '.btnEliminar', function () {
-            var CategoriaSeleccionado = $(this).closest("tr");
+            var TemporadaSeleccionado = $(this).closest("tr");
 
-            var data = tabledata.row(CategoriaSeleccionado).data();
+            var data = tabledata.row(TemporadaSeleccionado).data();
             debugger;
             swal({
                 title: "¿Está seguro?",
-                text: "¿Desea Eliminar la Categoria?",
+                text: "¿Desea Eliminar la Temporada?",
                 type: "warning",
                 showCancelButton: true,
                 confirmButtonClass: "btn-primary",
@@ -167,16 +166,16 @@
             },
                 function () {
                     jQuery.ajax({
-                        url: '@Url.Action("EliminarCategoria", "Mantenedor")',
+                        url: '@Url.Action("EliminarTemporada", "Mantenedor")',
                         type: "POST",
-                        data: JSON.stringify({ id: data.Id }),
+                        data: JSON.stringify({ id: data.Id_Temporada }),
                         dataType: "json",
                         contentType: "application/json; charset=utf-8",
                         success: function (data) {
 
                             if (data.resultado) {
 
-                                tabledata.row(CategoriaSeleccionado).remove().draw();
+                                tabledata.row(TemporadaSeleccionado).remove().draw();
 
                             } else {
                                 swal("No se Pudo Eliminar", data.Mensaje, "Error");
@@ -195,26 +194,26 @@
 
         function Guardar() {
 
-            var Categoria = {
-               Id: $("#txtid").val(),
+            var Temporada = {
+               Id_Temporada: $("#txtid").val(),
                Nombre: $("#txtNombre").val(),
                Estado: $("#cboestado").val() == 1 ? true : false
             }
 
             jQuery.ajax({
-                url: '@Url.Action("GuardarCategoria", "Mantenedor")',
+                url: '@Url.Action("GuardarTemporada", "Mantenedor")',
                 type: "POST",
-                data: JSON.stringify({ Cate: Categoria}),
+                data: JSON.stringify({ obj: Temporada}),
                 dataType: "json",
                 contentType: "application/json; charset=utf-8",
                 success: function (dato) {
 
                     //Categoria Nuevo
-                    if (Categoria.Id == 0) {
+                    if (Temporada.Id_Temporada == 0) {
 
                         if (dato.resultado != 0) {
-                            Categoria.Id = dato.resultado;
-                            tabledata.row.add(Categoria).draw(false);
+                            Temporada.Id_Temporada = dato.resultado;
+                            tabledata.row.add(Temporada).draw(false);
                             $("#FormModal").modal("hide");
                         } else {
                             $("#mensajeError").text(dato.Mensaje);
@@ -226,7 +225,7 @@
                     else {
                         if (dato.resultado) {
 
-                            tabledata.row(filaseleccionada).data(Categoria).draw(false);
+                            tabledata.row(filaseleccionada).data(Temporada).draw(false);
                             filaseleccionada = null;
                             $("#FormModal").modal("hide");
                         } else {
@@ -251,7 +250,4 @@
     </script>
 
 }
-
-
-
 

@@ -65,6 +65,8 @@
   <ItemGroup>
     <Compile Include="Conexion.cs" />
     <Compile Include="DAOCategoria.cs" />
+    <Compile Include="DAOProducto.cs" />
+    <Compile Include="DAOTemporada.cs" />
     <Compile Include="DAOUsuarios.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

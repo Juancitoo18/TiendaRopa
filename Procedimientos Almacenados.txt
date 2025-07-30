@@ -1,0 +1,241 @@
+-- Usuarios
+create proc sp_AgregarUsuario(
+@Nombre VARCHAR(100),
+@Correo VARCHAR(100),
+@Clave VARCHAR(100),
+@Restablecer VARCHAR(100),
+@Rol VARCHAR(20),
+@Estado BIT,
+@Mensaje VARCHAR(500) output,
+@Resultado int output
+)
+as
+begin
+	SET @Resultado = 0
+	SET @Mensaje = ''  -- <==== ¡IMPORTANTE!
+	If NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo)
+	begin
+		insert into usuarios(nombre_usuario,email_usuario,contraseña_usuario,restablecer_usuario,rol_usuario,Estado) values
+		(@Nombre,@Correo,@Clave,@Restablecer,@Rol,@Estado)
+
+		SET @Resultado = SCOPE_IDENTITY()
+		 SET @Mensaje = 'Usuario registrado correctamente'  -- <==== ¡IMPORTANTE!
+	end
+	else
+	 set @Mensaje = 'El correo del usuario ya existe'
+end
+
+GO
+
+CREATE PROC sp_EditarUsuario(
+    @ID INT,
+    @Nombre VARCHAR(100),
+    @Correo VARCHAR(100),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+)
+AS
+BEGIN
+    SET @Resultado = 0
+    IF NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo AND id_usuario != @ID)
+    BEGIN
+        UPDATE usuarios SET
+            nombre_usuario = @Nombre,
+            email_usuario = @Correo,
+            Estado = @Estado
+        WHERE id_usuario = @ID
+
+        SET @Resultado = 1
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'El correo del usuario ya existe'
+    END
+END
+GO
+
+
+--Categorias
+CREATE PROCEDURE sp_AgregarCategoria
+    @Nombre VARCHAR(500),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+    IF NOT EXISTS (SELECT * FROM categorias WHERE nombre_categoria = @Nombre)
+    BEGIN
+        INSERT INTO categorias (nombre_categoria, Estado)
+        VALUES (@Nombre, @Estado)
+        
+        SET @Resultado = SCOPE_IDENTITY()
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'La categoría ya existe'
+    END
+END
+GO
+
+CREATE PROCEDURE sp_EditarCategoria
+    @ID INT,
+    @Nombre VARCHAR(500),
+    @Estado BIT,
+    @Mensaje VARCHAR(500) OUTPUT,
+    @Resultado INT OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+    IF NOT EXISTS (
+        SELECT * FROM categorias 
+        WHERE nombre_categoria = @Nombre AND id_categoria != @ID
+    )
+    BEGIN
+        UPDATE categorias
+        SET nombre_categoria = @Nombre,
+            Estado = @Estado
+        WHERE id_categoria = @ID
+
+        SET @Resultado = 1
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'El nombre de la categoría ya existe'
+    END
+END
+GO
+
+CREATE PROCEDURE sp_EliminarCategoria
+    @IDCategoria INT,
+    @Resultado INT OUTPUT,
+    @Mensaje VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SET @Resultado = 0;
+    SET @Mensaje = '';
+
+    -- Validar si existe la categoría
+    IF EXISTS (SELECT 1 FROM categorias WHERE id_categoria = @IDCategoria)
+    BEGIN
+        -- Validar si la categoría tiene productos
+        IF NOT EXISTS (SELECT 1 FROM productos WHERE id_categoria_producto = @IDCategoria)
+        BEGIN
+            DELETE FROM categorias WHERE id_categoria = @IDCategoria;
+            SET @Resultado = 1;
+        END
+        ELSE
+        BEGIN
+            SET @Mensaje = 'No se puede eliminar la categoría porque tiene productos asociados.';
+        END
+    END
+    ELSE
+    BEGIN
+        SET @Mensaje = 'La categoría no existe.';
+    END
+END
+GO
+
+--Productos
+
+CREATE PROCEDURE sp_AgregarProducto
+    @nombre_producto VARCHAR(100),
+    @descripcion_producto TEXT,
+    @precio_producto DECIMAL(10,2),
+    @stock_producto INT,
+    @id_categoria_producto INT,
+    @id_temporada_producto INT,
+    @Estado BIT,
+    @Resultado INT OUTPUT,
+    @Mensaje VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+	IF NOT EXISTS (SELECT * FROM productos WHERE nombre_producto = @nombre_producto)
+    BEGIN 
+        INSERT INTO productos (
+            nombre_producto,
+            descripcion_producto,
+            precio_producto,
+            stock_producto,
+            id_categoria_producto,
+            id_temporada_producto,
+            Estado
+        )
+        VALUES (
+            @nombre_producto,
+            @descripcion_producto,
+            @precio_producto,
+            @stock_producto,
+            @id_categoria_producto,
+            @id_temporada_producto,
+            @Estado
+        );
+
+        SET @Resultado = SCOPE_IDENTITY()
+    END 
+	ELSE
+        SET @Mensaje = 'El producto ya existe'
+END
+GO
+
+CREATE PROCEDURE sp_EditarProducto
+    @id_producto INT,
+    @nombre_producto VARCHAR(100),
+    @descripcion_producto TEXT,
+    @precio_producto DECIMAL(10,2),
+    @stock_producto INT,
+    @id_categoria_producto INT,
+    @id_temporada_producto INT,
+    @Estado BIT,
+    @Resultado INT OUTPUT,
+    @Mensaje VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+        IF NOT EXISTS (SELECT * FROM productos WHERE nombre_producto = @nombre_producto AND id_producto != @id_producto)
+        BEGIN
+            UPDATE productos
+            SET nombre_producto = @nombre_producto,
+                descripcion_producto = @descripcion_producto,
+                precio_producto = @precio_producto,
+                stock_producto = @stock_producto,
+                id_categoria_producto = @id_categoria_producto,
+                id_temporada_producto = @id_temporada_producto,
+                Estado = @Estado
+            WHERE id_producto = @id_producto
+
+            SET @Resultado = 1
+        END
+        ELSE
+            SET @Mensaje = 'El producto no existe.'
+END
+GO
+
+CREATE PROCEDURE sp_EliminarProducto
+    @id_producto INT,
+    @Resultado INT OUTPUT,
+    @Mensaje VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET @Resultado = 0
+
+        IF NOT EXISTS (SELECT * FROM detalle_ventas dv 
+		INNER JOIN productos p on p.id_producto = dv.id_producto_dt 
+		WHERE id_producto = @id_producto)
+        BEGIN
+            DELETE FROM productos
+            WHERE id_producto = @id_producto
+
+            SET @Resultado = 1
+        END
+        ELSE
+            SET @Mensaje = 'El producto se encuentra relacionado a una venta.'
+END
+GO

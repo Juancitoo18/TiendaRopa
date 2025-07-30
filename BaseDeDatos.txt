@@ -72,6 +72,7 @@ CREATE TABLE productos (
     id_categoria_producto INT,
     id_temporada_producto INT,
     imagen_producto VARCHAR(255) NULL,
+	URL_Imagen VARCHAR(255) NULL,
     Estado BIT,
     FOREIGN KEY (id_categoria_producto) REFERENCES categorias(id_categoria),
 );
@@ -128,143 +129,39 @@ INSERT INTO provincias (provincia, Estado) VALUES
 ('Entre Ríos', 1);
 GO
 
-
-create proc sp_AgregarUsuario(
-@Nombre VARCHAR(100),
-@Correo VARCHAR(100),
-@Clave VARCHAR(100),
-@Restablecer VARCHAR(100),
-@Rol VARCHAR(20),
-@Estado BIT,
-@Mensaje VARCHAR(500) output,
-@Resultado int output
-)
-as
-begin
-	SET @Resultado = 0
-	SET @Mensaje = ''  -- <==== ¡IMPORTANTE!
-	If NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo)
-	begin
-		insert into usuarios(nombre_usuario,email_usuario,contraseña_usuario,restablecer_usuario,rol_usuario,Estado) values
-		(@Nombre,@Correo,@Clave,@Restablecer,@Rol,@Estado)
-
-		SET @Resultado = SCOPE_IDENTITY()
-		 SET @Mensaje = 'Usuario registrado correctamente'  -- <==== ¡IMPORTANTE!
-	end
-	else
-	 set @Mensaje = 'El correo del usuario ya existe'
-end
-
+INSERT INTO categorias (nombre_categoria, Estado) VALUES 
+('Pantalones', 1),
+('Remeras', 1),
+('Camisas', 1),
+('Buzos', 1),
+('Camperas', 1),
+('Vestidos', 1);
 GO
 
-CREATE PROC sp_EditarUsuario(
-    @ID INT,
-    @Nombre VARCHAR(100),
-    @Correo VARCHAR(100),
-    @Estado BIT,
-    @Mensaje VARCHAR(500) OUTPUT,
-    @Resultado INT OUTPUT
-)
-AS
-BEGIN
-    SET @Resultado = 0
-    IF NOT EXISTS (SELECT * FROM usuarios WHERE email_usuario = @Correo AND id_usuario != @ID)
-    BEGIN
-        UPDATE usuarios SET
-            nombre_usuario = @Nombre,
-            email_usuario = @Correo,
-            Estado = @Estado
-        WHERE id_usuario = @ID
-
-        SET @Resultado = 1
-    END
-    ELSE
-    BEGIN
-        SET @Mensaje = 'El correo del usuario ya existe'
-    END
-END
-
-
-CREATE PROCEDURE sp_AgregarCategoria
-    @Nombre VARCHAR(500),
-    @Estado BIT,
-    @Mensaje VARCHAR(500) OUTPUT,
-    @Resultado INT OUTPUT
-AS
-BEGIN
-    SET @Resultado = 0
-
-    IF NOT EXISTS (SELECT * FROM categorias WHERE nombre_categoria = @Nombre)
-    BEGIN
-        INSERT INTO categorias (nombre_categoria, Estado)
-        VALUES (@Nombre, @Estado)
-        
-        SET @Resultado = SCOPE_IDENTITY()
-    END
-    ELSE
-    BEGIN
-        SET @Mensaje = 'La categoría ya existe'
-    END
-END
+INSERT INTO usuarios (nombre_usuario, email_usuario, contraseña_usuario, restablecer_usuario, rol_usuario, estado)
+VALUES ('Juan Pérez', 'juanperez@gmail.com', '1234juan','1234juan', 'admin', 1),
+('María Gómez', 'mariag@gmail.com', 'maria5678','maria5678', 'vendedor', 1),
+('Carlos López', 'clopez@hotmail.com', 'carlosPass','carlosPass', 'cliente', 1),
+('Ana Martínez', 'ana.mtz@yahoo.com', 'ana123', 'ana123', 'cliente', 1),
+('Lucía Suárez', 'luciasuarez@outlook.com', 'luciaPass99', 'luciaPass99','vendedor', 1);
 GO
 
-CREATE PROCEDURE sp_EditarCategoria
-    @ID INT,
-    @Nombre VARCHAR(500),
-    @Estado BIT,
-    @Mensaje VARCHAR(500) OUTPUT,
-    @Resultado INT OUTPUT
-AS
-BEGIN
-    SET @Resultado = 0
+INSERT INTO productos (
+    nombre_producto,
+    descripcion_producto,
+    precio_producto,
+    stock_producto,
+    id_categoria_producto,
+    id_temporada_producto,
+    imagen_producto,
+    URL_Imagen,
+    Estado
+) VALUES 
+('Pantalón cargo beige', 'Pantalón de algodón con bolsillos laterales', 15999.99, 20, 1, NULL, NULL, 'https://via.placeholder.com/300x400?text=Pantalon', 1),
+('Remera oversize blanca', 'Remera suelta, algodón 100%', 7999.50, 35, 2, NULL, NULL, 'https://via.placeholder.com/300x400?text=Remera', 1),
+('Camisa de lino celeste', 'Camisa liviana ideal para verano', 12450.00, 15, 3, NULL, NULL, 'https://via.placeholder.com/300x400?text=Camisa', 1),
+('Buzo canguro negro', 'Buzo con capucha y bolsillo delantero', 18900.75, 10, 4, NULL, NULL, 'https://via.placeholder.com/300x400?text=Buzo', 1),
+('Campera inflable', 'Campera térmica para invierno', 24999.99, 8, 5, NULL, NULL, 'https://via.placeholder.com/300x400?text=Campera', 1);
 
-    IF NOT EXISTS (
-        SELECT * FROM categorias 
-        WHERE nombre_categoria = @Nombre AND id_categoria != @ID
-    )
-    BEGIN
-        UPDATE categorias
-        SET nombre_categoria = @Nombre,
-            Estado = @Estado
-        WHERE id_categoria = @ID
-
-        SET @Resultado = 1
-    END
-    ELSE
-    BEGIN
-        SET @Mensaje = 'El nombre de la categoría ya existe'
-    END
-END
-GO
-
-CREATE PROCEDURE sp_EliminarCategoria
-    @IDCategoria INT,
-    @Resultado INT OUTPUT,
-    @Mensaje VARCHAR(500) OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SET @Resultado = 0;
-    SET @Mensaje = '';
-
-    -- Validar si existe la categoría
-    IF EXISTS (SELECT 1 FROM categorias WHERE id_categoria = @IDCategoria)
-    BEGIN
-        -- Validar si la categoría tiene productos
-        IF NOT EXISTS (SELECT 1 FROM productos WHERE id_categoria_producto = @IDCategoria)
-        BEGIN
-            DELETE FROM categorias WHERE id_categoria = @IDCategoria;
-            SET @Resultado = 1;
-        END
-        ELSE
-        BEGIN
-            SET @Mensaje = 'No se puede eliminar la categoría porque tiene productos asociados.';
-        END
-    END
-    ELSE
-    BEGIN
-        SET @Mensaje = 'La categoría no existe.';
-    END
-END
-GO
+SELECT p.id_producto, p.nombre_producto, p.descripcion_producto, p.precio_producto, p.stock_producto,c.id_categoria ,c.nombre_categoria, p.id_temporada_producto, p.imagen_producto, p.URL_Imagen, p.Estado FROM Productos p
+INNER JOIN categorias c ON c.id_categoria = p.id_categoria_producto
