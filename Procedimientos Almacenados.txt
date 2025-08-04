@@ -239,3 +239,41 @@ BEGIN
             SET @Mensaje = 'El producto se encuentra relacionado a una venta.'
 END
 GO
+
+--- REPORTES
+
+CREATE PROC sp_ReporteDashboard
+AS
+BEGIN
+
+SELECT
+
+(SELECT COUNT(*) FROM clientes) [TotalClientes],
+
+(SELECT ISNULL(SUM(cantidad_dt),0) FROM detalle_ventas) [TotalVentas],
+
+(SELECT COUNT (*) FROM productos) [TotalProductos]
+
+END
+
+CREATE PROC sp_ReporteVentas(
+@fechainicio varchar(10),
+@fechafin varchar(10),
+@idVenta int
+)
+AS
+BEGIN
+
+SET DATEFORMAT dmy;
+
+SELECT v.id_cliente_vt, CONVERT(CHAR(10),v.fecha_vt,103) as fecha, CONCAT(c.nombre_cliente,' ' ,c.apellido_cliente) Nombre_Clientes,
+p.nombre_producto as PRODUCTO, p.precio_producto, dv.cantidad_dt, v.total_vt
+FROM detalle_ventas dv 
+INNER JOIN productos p ON p.id_producto = dv.id_producto_dt
+INNER JOIN ventas v ON v.id_venta = dv.id_venta_dt
+INNER JOIN clientes c ON c.id_cliente = v.id_cliente_vt
+WHERE CONVERT(DATE, v.fecha_vt) BETWEEN @fechainicio AND @fechafin 
+AND v.id_venta = iif(@idVenta = '' , v.id_venta,@idVenta)
+
+END
+GO

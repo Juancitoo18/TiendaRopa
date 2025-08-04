@@ -57,5 +57,31 @@ namespace TiendaRopa.Controllers
 
             return Json(new { resultado = Respuesta, Mensaje = Mensaje }, JsonRequestBehavior.AllowGet);
         }
+
+        [HttpGet]
+
+        public JsonResult ListaReporte(string fechainicio, string fechafin, int idventa)
+        {
+
+            List<Reporte> lista = new List<Reporte>();
+
+            lista = new NegocioReporte().Ventas(fechainicio,fechafin,idventa);
+
+            return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
+        }
+
+
+
+        [HttpGet]
+
+        public JsonResult ListaDashboard()
+        {
+            Dashboard obj = new NegocioReporte().VerDashboard();
+
+            return Json(new { resultado = obj }, JsonRequestBehavior.AllowGet);
+        }
+
+
+
     }
 }

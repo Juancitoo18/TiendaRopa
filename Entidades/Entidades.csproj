@@ -64,12 +64,14 @@
   <ItemGroup>
     <Compile Include="Categorias.cs" />
     <Compile Include="Clientes.cs" />
+    <Compile Include="Dashboard.cs" />
     <Compile Include="DetalleVentas.cs" />
     <Compile Include="Localidad.cs" />
     <Compile Include="Pagos.cs" />
     <Compile Include="Productos.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Provincia.cs" />
+    <Compile Include="Reporte.cs" />
     <Compile Include="Temporada.cs" />
     <Compile Include="Usuario.cs" />
     <Compile Include="Venta.cs" />

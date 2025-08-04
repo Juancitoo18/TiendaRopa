@@ -17,6 +17,7 @@ namespace TiendaRopa
                         "~/Scripts/DataTables/dataTables.responsive.js",
                         "~/Scripts/sweetalert.min.js",
                         "~/Scripts/jquery.validate.js",
+                        "~/Scripts/jquery-ui-1.14.1.min.js",
                         "~/Scripts/scripts.js"));
 
             /* bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
