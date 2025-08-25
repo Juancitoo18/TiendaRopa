@@ -61,7 +61,7 @@
        Historial de Ventas
     </div>
     <div class="card-body">
-        <form>
+        <form action="@Url.Action("ExportarVenta","Home")" method="post">
             <div class="row align-items-end">
                 <div class="col-sm-2">
                     <div class="mb-2">
@@ -83,7 +83,7 @@
                 </div>
                 <div class="col-sm-2">
                     <div class="d-grid mb-2">
-                        <button class="btn btn-primary" id="btnBuscar" type="button"><i class="fas fa-share"></i> Buscar </button>
+                        <button class="btn btn-primary" id="btnBuscar" type="button"><i class="fas fa-search"></i> Buscar </button>
                     </div>
                 </div>
                 <div class="col-sm-2">
@@ -127,25 +127,78 @@
 
     <script>
 
-        $("#txtfechainicio").datepicker( {dateFormat : 'dd/mm/yy'}).datepicker('setDate',new Date())
-        $("#txtfechafin").datepicker({ dateFormat: 'dd/mm/yy' }).datepicker('setDate', new Date())
+        var tabledata;
 
-        jQuery.ajax({
-            url: '@Url.Action("ListaDashboard", "Home")',
-            type: "GET",
-            dataType: "json",
-            contentType: "application/json; charset=utf-8",
-            success: function (data) {
+        $(document).ready(function () {
 
-                var objecto = data.resultado;
+            function toISODate(fecha) {
+                var partes = fecha.split('/');
+                return partes[2] + '-' + partes[1] + '-' + partes[0]; // yyyy-MM-dd
+            }
 
-                $("#totalcliente").text(objecto.TotalCliente)
-                $("#totalventa").text(objecto.TotalVenta)
-                $("#totalproducto").text(objecto.TotalProducto)
-                
-                
-            },
-        });
+            $("#txtfechainicio").datepicker( {dateFormat : 'dd/mm/yy'}).datepicker('setDate',new Date())
+            $("#txtfechafin").datepicker({ dateFormat: 'dd/mm/yy' }).datepicker('setDate', new Date())
+
+            jQuery.ajax({
+                url: '@Url.Action("ListaDashboard", "Home")',
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+
+                    var objecto = data.resultado;
+
+                    $("#totalcliente").text(objecto.TotalCliente)
+                    $("#totalventa").text(objecto.TotalVenta)
+                    $("#totalproducto").text(objecto.TotalProducto)
+
+
+                },
+            });
+
+
+
+            var Url = '@Url.Action("ListaReporte", "Home")' +
+                "?fechainicio=" + toISODate($("#txtfechainicio").val()) +
+                "&fechafin=" + toISODate($("#txtfechafin").val()) +
+                "&idventa=" + $("#txtidventa").val();
+
+
+
+            tabledata = $("#tabla").DataTable({
+
+                Responsive: true,
+                ordering: false,
+                "ajax": {
+                    url: Url,
+                    type: "GET",
+                    dataType: "json"
+                },
+                "columns": [
+                    { "data":"IdVenta"},
+                    { "data":"FechaVenta"},
+                    { "data":"Cliente"},
+                    { "data":"Producto"},
+                    { "data":"Precio"},
+                    { "data":"Cantidad"},
+                    { "data":"Total"}
+                ],
+                "language": {
+                    "url": "https://cdn.datatables.net/plug-ins/2.3.2/i18n/es-ES.json"
+                }
+            });
+
+            $("#btnBuscar").on("click", function () {
+
+                var nuevaURL = '@Url.Action("ListaReporte", "Home")' +
+                    "?fechainicio=" + toISODate($("#txtfechainicio").val()) +
+                    "&fechafin=" + toISODate($("#txtfechafin").val()) +
+                    "&idventa=" + $("#txtidventa").val();
+
+                tabledata.ajax.url(nuevaURL).load();
+            })
+
+        })
 
 
 

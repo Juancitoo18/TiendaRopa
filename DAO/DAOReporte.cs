@@ -47,6 +47,8 @@ namespace DAO
             return objeto;
         }
 
+       
+
         public List<Reporte> Ventas(string fechainicio, string fechafin, int idventa)
         {
             List<Reporte> lista = new List<Reporte>();
@@ -57,9 +59,9 @@ namespace DAO
                 {
 
                     SqlCommand cmd = new SqlCommand("sp_ReporteVentas", cn);
-                    cmd.Parameters.AddWithValue("fechainicio", fechainicio);
-                    cmd.Parameters.AddWithValue("fechafin", fechafin);
-                    cmd.Parameters.AddWithValue("@idVenta", idventa);
+                    cmd.Parameters.Add("fechainicio", SqlDbType.Date).Value = DateTime.Parse(fechainicio);
+                    cmd.Parameters.Add("fechafin", SqlDbType.Date).Value = DateTime.Parse(fechafin);
+                    cmd.Parameters.Add("idVenta", SqlDbType.Int).Value = idventa;
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cn.Open();
@@ -72,13 +74,13 @@ namespace DAO
                             lista.Add(
                                 new Reporte()
                                 {
-                                    IdVenta = Convert.ToInt32(dr["IdVenta"]),
+                                    IdVenta = Convert.ToInt32(dr["id_venta"]),
                                     FechaVenta = dr["fecha"].ToString(),
                                     Cliente = dr["Nombre_Clientes"].ToString(),
                                     Producto = dr["PRODUCTO"].ToString(),
-                                    Precio = Convert.ToDecimal( dr["Precio"]),
-                                    Cantidad = Convert.ToInt32 (dr["Cantidad"]),
-                                    Total = Convert.ToDecimal(dr["Total"]),
+                                    Precio = Convert.ToDecimal(dr["precio_producto"]),
+                                    Cantidad = Convert.ToInt32(dr["cantidad_dt"]),
+                                    Total = Convert.ToDecimal(dr["total_vt"]),
                                 }
                                 );
                         }
